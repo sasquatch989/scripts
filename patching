@@ -1,0 +1,45 @@
+set -e
+EXEC_NAME=$(basename $0)
+ADD_VLAN=/path1
+DEL_VLAN=/path2
+EXEC_TEXT='validate_links'
+FILES="$ADD_VLAN $DEL_VLAN"
+
+check_running_as_root()
+{
+  if [ "$(id -u)" != "0" ]; then
+     /bin/echo "This script must be run with sudo privileges" 1>&2
+     exit 1
+  fi
+}
+
+get_line ()
+{
+  METH_LINE=$(awk '$1 ~ /main.*\)/{print NR-1}' $1 |tr -d ':')
+  EXEC_LINE=$(awk '$1 ~ /add_new_vlan$/{print NR}' $1 |tr -d ':')
+}
+
+add_patch ()
+{
+  sed -i "$EXEC_LINE i \ \ ${EXEC_TEXT}" $1
+  sed -i "$METH_LINE i \ #ADDING CHECK FOR AVAILABLE UPLINKS \n VALID_LAG= \n validate_links\(\) \n \{ \n  VALID_INTERFACES=\$\(cli -c \"show interface brief\" | grep ae | awk \"{print \$1}\" | cut -c3- ) \n   for i in \$UPLINK_LAG; do \n     for j in \$VALID_INTERFACES; do \n       if [[ \$i == \$j ]]; then \n         VALID_LAG=\"\${VALID_LAG} \$i\" \n       fi \n     done \n   done \n  UPLINK_LAG=\$VALID_LAG \n \}" $1
+}
+
+make_backup ()
+{
+  if [[ ! -a $1.bak ]]; then
+    cp $1 $1.bak
+  fi
+}
+
+main ()
+{
+  check_running_as_root
+  for z in $FILES; do
+    make_backup "$z"
+    get_line "$z"
+    add_patch "$z"
+  done
+}
+
+main $@
