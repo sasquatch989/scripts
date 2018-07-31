@@ -1,0 +1,25 @@
+read_in_updates()
+{
+read -r -n1 -p "$1 [$3]: " INPUT
+  case $INPUT in
+    '') INPUT=$3;;
+    *) ;;
+  esac
+  #Below is to scrub data and change case etc.
+  case $2 in
+      *UPPERCASE*) eval "$2=${INPUT,,}" ;; # Convert to lowercase
+      *lowercase*) eval "$2=${INPUT^^}" ;; # Convert to UPPER
+      *iNVERT*) eval "$2=${INPUT^}" ;; #Convert to Capital First letter
+      *) echo "Bad inputs" ;; #Catch all
+  esac
+}
+
+array1=(
+"read_in_updates 'PromptText' 'VAR_ASSIGNED' 'DefaultChoice'"
+)
+
+#Iterate over the array and print the $Var assigned (Debugging)
+for i in "${array1[@]}"; do
+  eval "$i"
+  echo "$i" | cut -d "'" -f 4 | { read -r Var; echo "This is $Var"; }
+done
