@@ -1,0 +1,42 @@
+#!/usr/bin/expect  
+set force_conservative 0  ;# set to 1 to force conservative mode even if
+			  ;# script wasn't run conservatively originally
+if {$force_conservative} {
+	set send_slow {1 .1}
+	proc send {ignore arg} {
+		sleep .1
+		exp_send -s -- $arg
+	}
+}
+set log_user 1
+set sup_port [lindex $argv 0]
+set sup_pw [lindex $argv 1]
+set ignitever [lindex $argv 2]
+set agent cldtx_support@localhost
+set testerpw chesterthetester666!
+set proxprompt "~]$"
+set picaprompt ":~\$"
+set send_human {.5 .5 .5 .5 100}
+set timeout -1
+spawn ./start_ssh
+match_max 100000
+send_user "$sup_pw and $sup_port"
+expect "tester@ignite-proxy.cloudistics.com's password: " {send "$testerpw\r"}
+expect "$proxprompt " {send "ssh $agent -p $sup_port -o StrictHostKeyChecking=no\r"}
+expect "password: " {send "$sup_pw\r"}
+#expect "$picaprompt " {send "aptfix=\$(grep -n cloudistics /etc/apt/sources.list.d/cloudistics.list | cut -d : -f 1)\r"}
+#expect "$picaprompt " {send "for i in \$aptfix; do sudo sed -i \"\$i s|deb|#deb|\" /etc/apt/sources.list.d/cloudistics.list; done\r"}
+#expect "$picaprompt " {send "sudo bash -c \"echo 'deb \[trusted=yes\] https://repo.global.cloudistics.com/$ignitever/controller_repo_deb7/ ./' >> /etc/apt/sources.list.d/cloudistics.list\"\r"}
+#expect "$picaprompt " {send "sudo bash -c \"if \[ -z /etc/yum.repos.d/cloudistics-os.repo \]; then rm -r /etc/yum.repos.d/cloudistics-os.repo;fi\"\r"}
+#expect "$picaprompt " {send "sudo apt-get update -y\r"}
+#expect "$picaprompt " {send "sudo rm /etc/init.d/cloudistics-ovs-monitor\r"}
+#expect "$picaprompt " {send "sudo apt-get install -y -o Dpkg::Options::='--force-confmiss' cloudistics-network-controller cloudistics-ovs-monitor\r"}
+#expect "The default action is to keep your current version." {send "N\r"}
+#expect "$picaprompt " {send "sudo dpkg -l | grep cloudistics\r"}
+#expect "*$ignitever*" {send_user "\nIgnite upgrade successful\n"}
+expect "$picaprompt " {send "sudo sed -i 's|\\(\"WANPortID\": \\)\\(\[45\]\[0-9\]\\),|\\1\\\[\\2\\\],|' /etc/cloudistics/cloudistics-network-controller.conf\r"}
+#send_user "logging out!!"
+
+expect "$picaprompt " {send "logout\r"}
+expect "$proxprompt " {send "logout\r"}
+expect eof

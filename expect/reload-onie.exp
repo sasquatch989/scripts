@@ -1,0 +1,61 @@
+#!/usr/bin/expect 
+
+set force_conservative 0  ;# set to 1 to force conservative mode even if
+			  ;# script wasn't run conservatively originally
+if {$force_conservative} {
+	set send_slow {1 .1}
+	proc send {ignore arg} {
+		sleep .1
+		exp_send -s -- $arg
+	}
+}
+
+set admin admin
+set mpass ioctl960
+set prompt ":~\$"
+set mgmtip [lindex $argv 0]
+set mgmtgw [lindex $argv 1]
+set mgmtdns [lindex $argv 2]
+
+
+
+set send_human {.8 .8 .8 .8 100}
+set timeout -1
+spawn ./start
+match_max 100000
+expect "Connected" {send "\r"}
+expect { 
+	" login:" {  		
+		send "$admin\r"
+		exp_continue 
+	 	  }
+        "Password: " {
+		send "$mpass\r\r"
+		exp_continue
+		    }
+	"$prompt " {send "\r"}
+	}
+
+send "sudo reboot\r"
+expect "Press enter to boot the selected OS, `e' to edit the commands" {send "\003N\r\r"}
+expect "Please press Enter to activate this console." {send "\r\r\r"}
+expect "ONIE:/ #" {send "onie-discovery-stop\r"}
+expect "ONIE:/ #" {send "ip address add $mgmtip dev eth0\r"}
+expect "ONIE:/ #" {send "ip route add default via $mgmtgw dev eth0\r"}
+expect "ONIE:/ #" {send "scp -C -r tester@ignite-proxy.cloudistics.com:/home/tester/onie/latest/* /tmp/\r"}
+expect {
+	"y/n" {
+		send "y\r"
+		exp_continue
+		}
+	"tester@ignite-proxy.cloudistics.com's password:" {send "chesterthetester666!\r"}
+	}
+expect "ONIE:/ #" {send "onie-nos-install /tmp/onie*\r"}
+expect "XorPlus login:" {send "admin\r"}
+expect "Password:" {send "pica8\r"}
+expect "(current) UNIX password:" {send "pica8\r"}
+expect "Enter new UNIX password:" {send "$mpass\r"}
+expect "Retype new UNIX password:" {send "$mpass\r"}
+expect "$prompt " {send "logout\r"}
+expect "login: " {send -h "~."} 
+expect eof

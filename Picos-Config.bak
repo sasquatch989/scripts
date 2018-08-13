@@ -1,0 +1,38 @@
+set ip routing enable true
+    set protocols lldp enable true
+    set protocols spanning-tree force-version 2
+    set protocols static route 0.0.0.0/0 next-hop 172.16.0.1
+    set protocols static route 8.8.8.8/32 next-hop 172.16.0.1
+    set protocols vrrp interface vlan-4091 vif vlan-4091 vrid 1 priority 150
+    set protocols vrrp interface vlan-4091 vif vlan-4091 vrid 1 ip 100.65.15.254
+    set protocols vrrp interface vlan-4091 vif vlan-4091 vrid 1 load-balance disable false
+    set protocols vrrp interface vlan-50 vif vlan-50 vrid 2 priority 150
+    set protocols vrrp interface vlan-50 vif vlan-50 vrid 2 ip 172.16.0.254
+    set protocols vrrp interface vlan-50 vif vlan-50 vrid 2 load-balance disable false
+    set system login user manager authentication plain-text-password "$1$/oGuOkFk$F.o7cEgfXyp3oWHRTIz1H/"
+    set system login user manager class "super-user"
+    set system management-ethernet eth0 ip-address IPv4 "10.101.10.95/19"
+    set system management-ethernet eth0 ip-gateway IPv4 10.101.0.1
+    set system hostname "support-secondary"
+    set system dns-server-ip 10.0.64.10
+    set system inband enable true
+    set vlan-interface interface vlan-4092 vif vlan-4092 address 100.64.254.254 prefix-length 24
+    set vlan-interface interface vlan-50 vif vlan-50 address 172.16.0.50 prefix-length 24
+    set vlan-interface interface vlan-4091 vif vlan-4091 address 100.65.15.252 prefix-length 20
+    set vlan-interface interface vlan-4093 vif vlan-4093 address 100.64.253.1 prefix-length 30
+    set vlan-interface interface vlan-899 vif vlan-899 address 7.7.7.2 prefix-length 30
+    set vlans vlan-id 50 vlan-name "Uplink"
+    set vlans vlan-id 50 l3-interface "vlan-50"
+    set vlans vlan-id 899 description "Route-Rule-1 for policy based routing"
+    set vlans vlan-id 899 vlan-name "Route-Rule-1"
+    set vlans vlan-id 899 l3-interface "vlan-899"
+    set vlans vlan-id 900 vlan-name "Uplink"
+    set vlans vlan-id 900 l3-interface "vlan-900"
+    set vlans vlan-id 901
+    set vlans vlan-id 4091 vlan-name "HYP"
+    set vlans vlan-id 4091 l3-interface "vlan-4091"
+    set vlans vlan-id 4092 vlan-name "BMC"
+    set vlans vlan-id 4092 l3-interface "vlan-4092"
+    set vlans vlan-id 4093 vlan-name "MLAGPEER"
+    set vlans vlan-id 4093 l3-interface "vlan-4093"
+

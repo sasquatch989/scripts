@@ -1,0 +1,52 @@
+#!/usr/bin/expect
+
+set force_conservative 0  ;# set to 1 to force conservative mode even if
+			  ;# script wasn't run conservatively originally
+if {$force_conservative} {
+	set send_slow {1 .1}
+	proc send {ignore arg} {
+		sleep .1
+		exp_send -s -- $arg
+	}
+}
+send_user "\n Starting the Backup \n"
+set log_user 0
+set admin admin
+set mpass ioctl960
+set prompt ":~\$"
+set send_human {.6 .6 .6 .6 100}
+set timeout 60
+spawn ./start
+match_max 100000
+expect "Connected" {send "\r"}
+expect {
+        " login:" {
+                send "$admin\r"
+                exp_continue
+                  }
+        "Password: " {
+                send "$mpass\r\r"
+                exp_continue
+                    }
+        "$prompt " {
+                send "\r"
+                }
+        }
+
+expect "$prompt " {send "sudo mkdir -p /tmp/backup/\r"}
+expect "$prompt " {send "sudo cp /usr/share/cloudistics/backup-picos.sh /usr/share/cloudistics/backup-picos.sh.old\r"}
+expect "$prompt " {send "sudo sed -i 's|BASE=/mnt/tmp/backup|BASE=/tmp/backup/|' /usr/share/cloudistics/backup-picos.sh\r"}
+expect "$prompt " {send "sudo /usr/share/cloudistics/backup-picos.sh\r" }
+#expect "$prompt " {send "sudo ssh tester@ignite-proxy.cloudistics.com -o StrictHostKeyChecking=no 'mkdir -p /home/tester/testing-backup'\r" }
+#expect "tester@ignite-proxy.cloudistics.com's password: " {send "chesterthetester666!\r" }
+expect "$prompt " {send "sudo scp -q -C -o StrictHostKeyChecking=no -r /tmp/backup/ tester@ignite-proxy.cloudistics.com:/home/tester/testing-backup\r" }
+expect "tester@ignite-proxy.cloudistics.com's password: " {send "chesterthetester666!\r" }
+expect "$prompt " {send -h "~t/tmp/backup/Picos-Config* Picos-Config.bak\r" }
+expect "$prompt " {
+		send -h "~t/tmp/backup/\$HOSTNAME/etc/cldtx_switch_resource.sh cldtx_switch_resource.old\r"
+		send "\r\r"
+		}
+expect "$prompt " {send "logout\r"}
+expect " login:" {send "\r"}
+expect " login:" {send -h "~."}
+expect eof

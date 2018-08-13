@@ -1,0 +1,3 @@
+#!/bin/bash
+
+cu -l /dev/ttyS0

@@ -1,0 +1,5 @@
+[user]
+	name = sasquatch989
+	mail = solomon.j.sands@gmail.com
+[ssh]
+	add = /root/.ssh/id_rsa
