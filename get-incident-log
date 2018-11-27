@@ -1,0 +1,58 @@
+#!/bin/bash
+
+NODES=""
+usage() {
+        printf "get-incident-log -p <SUPPORT_MODE_PORT_NUMBER> -c (compute) -s (storage) -n (network) -b (baremetals) -a (all nodes) -i (custom IP, space delimited)"
+        close_cm
+        exit 1
+}
+
+create_cm() {
+        if [[ ! -d /home/tester/.ssh/cm/ ]]; then
+                mkdir -p /home/tester/.ssh/cm/
+        fi
+
+        ssh -M -f -N -S /home/tester/.ssh/cm/"$SUPPORT_PORT_NUM"-%C cldtx_support@localhost -p "$SUPPORT_PORT_NUM"
+        LOG_CONTROL_PATH=$(echo /home/tester/.ssh/cm/"$SUPPORT_PORT_NUM"-*)
+}
+
+close_cm() {
+        ssh -O stop -S "$LOG_CONTROL_PATH"  cldtx_support@localhost -p "$SUPPORT_PORT_NUM"
+}
+
+parse_args() {
+        while getopts ":p:csnbai:" option
+                do
+                        case "${option}" in
+                                p) SUPPORT_PORT_NUM=${OPTARG};;
+                                c) NODES+="CC_IP";;
+                                s) NODES+="SC_IP";;
+                                n) NODES+="NC_IP";;
+                                b) NODES+="BMC_IP";;
+                                a) NODES="CC_IP SC_IP NC_IP BMC_IP";;
+                                h) usage;;
+                                \?) echo :Unknown option: -${OPTARG} >&2; usage;;
+                        esac
+                done
+}
+
+send_env_files() {
+        scp -q -o ControlPath="$LOG_CONTROL_PATH" -r /home/tester/support/scripts/etc/.ssh/ cldtx_support@localhost:/home/cldtx_support/
+}
+
+pull_scripts() {
+        ssh -q -S "$LOG_CONTROL_PATH" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -t -p "$SUPPORT_PORT_NUM" \
+        cldtx_support@localhost "scp -q -C proxy:/home/tester/support/scripts/incident-log/* . && bash cloudistics-get-incident-report $NODES"
+}
+
+main() {
+
+parse_args "$@"
+create_cm
+send_env_files
+pull_scripts
+close_cm
+
+}
+
+main "$@"
